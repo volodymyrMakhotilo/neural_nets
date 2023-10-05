@@ -16,14 +16,16 @@ class Binary_Crossentropy(Cost_Function):
 
 # Log N is under question
 # y_true should be sparse
+# Somehow y_pred values are turning to zero, so function throws error
 class Sparse_Categorical_Crossentropy(Cost_Function):
     def compute(self, y_true, y_pred):
         #class_num = y_true.shape[-1]
-        loss = np.mean(np.sum(-(y_true * np.log(y_pred)), axis=1, keepdims=True))
+        loss = np.mean(np.sum(-(y_true * np.log(y_pred + 1E-10)), axis=1, keepdims=True))
         return loss
 
     def derivative(self, y_true, y_pred):
-        return -(y_true / y_pred)
+
+        return -(y_true / (y_pred + 1E-10))
 
 
 class MAE(Cost_Function):

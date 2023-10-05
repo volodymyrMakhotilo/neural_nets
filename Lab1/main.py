@@ -4,7 +4,8 @@ from utils.cost_functions import Sparse_Categorical_Crossentropy
 from utils.optimizers import gradient_descent
 from utils.activations import ReLU, Softmax
 from tqdm import tqdm
-
+from sklearn.datasets import make_classification
+from sklearn.preprocessing import OneHotEncoder
 
 class Layer:
     # Shapes should be compatible for matrix multiplication
@@ -34,12 +35,15 @@ class Layer:
 
       grad = dX * self.activation.derivative(self.compute_linear(self.cached_input))
 
+
+      ouput = np.matmul(grad, self.weights.T)
       self.update(grad)
-      return np.matmul(grad, self.weights.T)
+
+      return ouput
 
     # Experiment!
     def weights_init(self, height, width):
-        return uniform(0.1, 1., (height, width))
+        return uniform(1E-2, 1., (height, width))
 
 class Neural_Net:
     # FIX COST AND OPT INIT
@@ -89,18 +93,20 @@ class Neural_Net:
         self.layers.append(layer)
 
 def main():
-    X = randn(300, 2)
-    y = (randn(300, 3) > 0.5).astype(np.uint)
+    X, y = make_classification(n_samples=25, n_features=6, n_informative=3, n_classes= 3)
+    enc = OneHotEncoder()
+    y = enc.fit_transform(np.expand_dims(y, axis=-1)).toarray()
+
+
     model = Neural_Net(X, y)
 
     input_layer = Layer(X.shape[-1], 3, ReLU())
-    hidden_layer = Layer(input_layer.output_size, 5, ReLU())
+    hidden_layer = Layer(input_layer.output_size, 3, ReLU())
     output_layer = Layer(hidden_layer.output_size, 3, Softmax())
 
     model.add(input_layer)
     model.add(hidden_layer)
     model.add(output_layer)
-
 
     model.fit(10)
 
