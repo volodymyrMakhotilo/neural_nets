@@ -50,8 +50,10 @@ class Linear(Activation_Function):
 
 class Softmax(Activation_Function):
     def compute(self, x):
-        x = np.float64(x)
-        exp = np.exp(x)
+        # Technic to prevent overflow https://stats.stackexchange.com/questions/304758/softmax-overflow
+        # Technic results in numeric underflow due to float number arithmetics
+        m = np.max(x, axis=-1, keepdims=True)
+        exp = np.exp(x - m)
         return exp / np.sum(exp, axis=1, keepdims=True)
 
     def derivative(self, x):
