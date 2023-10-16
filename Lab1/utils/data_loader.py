@@ -88,13 +88,20 @@ if pca_outlier_remove:
     pca_df = pd.DataFrame(pca.fit_transform(t_df.drop([target_name], axis=1, errors='ignore')), columns=[f'V{i}'for i in range(t_df.shape[1])])
     pca_df[target_name] = df[target_name]
 
-    q1, q3 = pca_df['V0'].quantile([0.25, 0.75])
-    iqr = q3 - q1
-    lw = q1 - 1.5 * iqr
-    uw = q3 + 1.5 * iqr
-    outliers_mask = (pca_df['V0'] > uw) | (pca_df['V0'] < lw)
+    q1_0, q3_0 = pca_df['V0'].quantile([0.03, 0.97])
+    iqr_0 = q3_0 - q1_0
+    lw_0 = q1_0 - 1.5 * iqr_0
+    uw_0 = q3_0 + 1.5 * iqr_0
+
+    q1_1, q3_1 = pca_df['V1'].quantile([0.03, 0.97])
+    iqr_1 = q3_1 - q1_1
+    lw_1 = q1_1 - 1.5 * iqr_1
+    uw_1 = q3_1 + 1.5 * iqr_1
+
+    outliers_mask = (pca_df['V0'] > uw_0) | (pca_df['V0'] < lw_0) | (pca_df['V1'] > uw_1) | (pca_df['V1'] < lw_1)
     pca_df['is_outlier'] = False
     pca_df.loc[outliers_mask, 'is_outlier'] = True
+
     df = df[~pca_df['is_outlier'].values].reset_index(drop=True)
 
 
@@ -109,16 +116,13 @@ fig, ax = plt.subplots(1, figsize=(10, 10))
 sb.scatterplot(data=pca_df, x='V0', y='V1', hue='is_outlier', ax=ax)
 plt.tight_layout()
 
-
 ev_df = pd.DataFrame(zip(range(len(input_features)), pca.explained_variance_ratio_), columns=['component', 'value'])
 fig, ax = plt.subplots(1, figsize=(10, 10))
 sb.lineplot(data=ev_df, x='component', y='value',ax=ax)
 plt.tight_layout()
 
 fig, ax = plt.subplots(1, figsize=(10, 10))
-sb.scatterplot(data=pca_df, x='V0', y=target_name, ax=ax)
-plt.tight_layout()
-
-fig, ax = plt.subplots(1, figsize=(10, 10))
 sb.scatterplot(data=pca_df, x='V0', y='V1', hue=target_name, ax=ax)
 plt.tight_layout()
+
+plt.show()
