@@ -5,11 +5,11 @@ import math as m
 
 class Activation_Function(ABC):
     @abstractmethod
-    def compute(self):
+    def compute(self, x):
         pass
 
     @abstractmethod
-    def derivative(self):
+    def derivative(self, x):
         pass
 
 
