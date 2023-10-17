@@ -48,32 +48,62 @@ def grab_col_names(dataframe, cat_th=10, car_th=20):
     print(f'num_but_cat: {len(num_but_cat)}')
     return cat_cols, num_cols, cat_but_car
 
+def PCA_outlier_remove(df, outlier_prop):
+    pca = PCA(n_components=None)
+    pca_df = pd.DataFrame(pca.fit_transform(t_df.drop([target_name], axis=1, errors='ignore')),
+                          columns=[f'V{i}' for i in range(t_df.shape[1] - 1)])
+    pca_df[target_name] = df[target_name]
+
+    q1_0, q3_0 = pca_df['V0'].quantile([outlier_prop, 1 - outlier_prop])
+    iqr_0 = q3_0 - q1_0
+    lw_0 = q1_0 - 1.5 * iqr_0
+    uw_0 = q3_0 + 1.5 * iqr_0
+
+    q1_1, q3_1 = pca_df['V1'].quantile([outlier_prop, 1 - outlier_prop])
+    iqr_1 = q3_1 - q1_1
+    lw_1 = q1_1 - 1.5 * iqr_1
+    uw_1 = q3_1 + 1.5 * iqr_1
+
+    outliers_mask = (pca_df['V0'] > uw_0) | (pca_df['V0'] < lw_0) | (pca_df['V1'] > uw_1) | (pca_df['V1'] < lw_1)
+    pca_df['is_outlier'] = False
+    pca_df.loc[outliers_mask, 'is_outlier'] = True
+
+    return df[~pca_df['is_outlier'].values].reset_index(drop=True), pca_df, pca
+
 # read data
-df = pd.read_csv("../data/bank/bank.csv")
-# df = pd.read_csv("../data/boston_housing/housing.csv")
+df = pd.read_csv("../data/boston_housing/HousingData.csv")
+df = df.dropna()
+target_name = 'MEDV'
 
-# drop unnecessary attributes
-df = df.drop(labels=['default', 'contact', 'day', 'month', 'pdays', 'previous', 'loan', 'poutcome'], axis=1)
 
-# dataset info
+# # read data
+# df = pd.read_csv("../data/bank/bank.csv")
+# # drop unnecessary attributes
+# df = df.drop(labels=['default', 'contact', 'day', 'month', 'pdays', 'previous', 'loan', 'poutcome'], axis=1)
+# target_name = 'deposit'
+
+
+# # dataset info
 # check_df(df)
+
 
 # get num and cat attributes
 cat_features, num_features, cat_but_car = grab_col_names(df)
 input_features = num_features + cat_features + cat_but_car
 
 
-target_name = 'deposit'
-pca_outlier_remove = True
-
 if len(cat_features) != 0:
     df[cat_features] = df[cat_features].astype('category')
 
 test_size = 0.20
-df, test_df = train_test_split(df, test_size=test_size, random_state=42, stratify=df[target_name])
+df, test_df = train_test_split(df, test_size=test_size, random_state=42)
+
+# test_size = 0.20
+# df, test_df = train_test_split(df, test_size=test_size, random_state=42, stratify=df[target_name])
 
 
 highcorr_features = get_highly_correlated_features(df, num_features, corr_threshold=0.90)
+
 num_features = list(set(num_features) - set(highcorr_features))
 df = df.drop(highcorr_features, axis=1, errors='ignore')
 
@@ -83,33 +113,13 @@ if len(cat_features) > 0:
     t_df = pd.concat([t_df, pd.get_dummies(t_df[cat_features])], axis=1)
     t_df = t_df.drop(cat_features, axis=1)
 
-if pca_outlier_remove:
-    pca = PCA(n_components=None)
-    pca_df = pd.DataFrame(pca.fit_transform(t_df.drop([target_name], axis=1, errors='ignore')), columns=[f'V{i}'for i in range(t_df.shape[1])])
-    pca_df[target_name] = df[target_name]
+df, pca_df, pca = PCA_outlier_remove(df, 0.2)
+df.to_csv('../data/preprocessed/boston_housing/train_boston_housing.csv', index=False)
+test_df.to_csv('../data/preprocessed/boston_housing/test_boston_housing.csv', index=False)
 
-    q1_0, q3_0 = pca_df['V0'].quantile([0.03, 0.97])
-    iqr_0 = q3_0 - q1_0
-    lw_0 = q1_0 - 1.5 * iqr_0
-    uw_0 = q3_0 + 1.5 * iqr_0
-
-    q1_1, q3_1 = pca_df['V1'].quantile([0.03, 0.97])
-    iqr_1 = q3_1 - q1_1
-    lw_1 = q1_1 - 1.5 * iqr_1
-    uw_1 = q3_1 + 1.5 * iqr_1
-
-    outliers_mask = (pca_df['V0'] > uw_0) | (pca_df['V0'] < lw_0) | (pca_df['V1'] > uw_1) | (pca_df['V1'] < lw_1)
-    pca_df['is_outlier'] = False
-    pca_df.loc[outliers_mask, 'is_outlier'] = True
-
-    df = df[~pca_df['is_outlier'].values].reset_index(drop=True)
-
-
-# df.to_csv('../data/preprocessed/boston_housing/train_boston_housing.csv', index=False)
-# test_df.to_csv('../data/preprocessed/boston_housing/test_boston_housing.csv', index=False)
-
-df.to_csv('../data/preprocessed/bank/train_bank.csv', index=False)
-test_df.to_csv('../data/preprocessed/bank/test_bank.csv', index=False)
+# df, pca_df, pca = PCA_outlier_remove(df, 0.03)
+# df.to_csv('../data/preprocessed/bank/train_bank.csv', index=False)
+# test_df.to_csv('../data/preprocessed/bank/test_bank.csv', index=False)
 
 
 fig, ax = plt.subplots(1, figsize=(10, 10))
@@ -122,7 +132,8 @@ sb.lineplot(data=ev_df, x='component', y='value',ax=ax)
 plt.tight_layout()
 
 fig, ax = plt.subplots(1, figsize=(10, 10))
-sb.scatterplot(data=pca_df, x='V0', y='V1', hue=target_name, ax=ax)
+sb.heatmap(df.corr(), annot=True)
 plt.tight_layout()
 
 plt.show()
+
