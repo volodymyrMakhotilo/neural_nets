@@ -51,7 +51,7 @@ def grab_col_names(dataframe, cat_th=10, car_th=20):
 def PCA_outlier_remove(df, outlier_prop):
     pca = PCA(n_components=None)
     pca_df = pd.DataFrame(pca.fit_transform(t_df.drop([target_name], axis=1, errors='ignore')),
-                          columns=[f'V{i}' for i in range(t_df.shape[1] - 1)])
+                          columns=[f'V{i}' for i in range(t_df.shape[1])])
     pca_df[target_name] = df[target_name]
 
     q1_0, q3_0 = pca_df['V0'].quantile([outlier_prop, 1 - outlier_prop])
@@ -70,17 +70,19 @@ def PCA_outlier_remove(df, outlier_prop):
 
     return df[~pca_df['is_outlier'].values].reset_index(drop=True), pca_df, pca
 
-# read data
-df = pd.read_csv("../data/boston_housing/HousingData.csv")
-df = df.dropna()
-target_name = 'MEDV'
-
-
 # # read data
-# df = pd.read_csv("../data/bank/bank.csv")
-# # drop unnecessary attributes
-# df = df.drop(labels=['default', 'contact', 'day', 'month', 'pdays', 'previous', 'loan', 'poutcome'], axis=1)
-# target_name = 'deposit'
+# df = pd.read_csv("../data/boston_housing/HousingData.csv")
+# df = df.dropna()
+# target_name = 'MEDV'
+
+
+# read data
+df = pd.read_csv("../data/bank/bank.csv")
+# drop unnecessary attributes
+df = df.drop(labels=['default', 'contact', 'day', 'month', 'pdays', 'previous', 'loan', 'poutcome'], axis=1)
+target_name = 'deposit'
+target_mapping = {'no': 0, 'yes': 1}
+df[target_name] = df[target_name].replace(target_mapping)
 
 
 # # dataset info
@@ -95,11 +97,11 @@ input_features = num_features + cat_features + cat_but_car
 if len(cat_features) != 0:
     df[cat_features] = df[cat_features].astype('category')
 
-test_size = 0.20
-df, test_df = train_test_split(df, test_size=test_size, random_state=42)
-
 # test_size = 0.20
-# df, test_df = train_test_split(df, test_size=test_size, random_state=42, stratify=df[target_name])
+# df, test_df = train_test_split(df, test_size=test_size, random_state=42)
+
+test_size = 0.20
+df, test_df = train_test_split(df, test_size=test_size, random_state=42, stratify=df[target_name])
 
 
 highcorr_features = get_highly_correlated_features(df, num_features, corr_threshold=0.90)
@@ -113,13 +115,13 @@ if len(cat_features) > 0:
     t_df = pd.concat([t_df, pd.get_dummies(t_df[cat_features])], axis=1)
     t_df = t_df.drop(cat_features, axis=1)
 
-df, pca_df, pca = PCA_outlier_remove(df, 0.2)
-df.to_csv('../data/preprocessed/boston_housing/train_boston_housing.csv', index=False)
-test_df.to_csv('../data/preprocessed/boston_housing/test_boston_housing.csv', index=False)
+# df, pca_df, pca = PCA_outlier_remove(df, 0.15)
+# df.to_csv('../data/preprocessed/boston_housing/train_boston_housing.csv', index=False)
+# test_df.to_csv('../data/preprocessed/boston_housing/test_boston_housing.csv', index=False)
 
-# df, pca_df, pca = PCA_outlier_remove(df, 0.03)
-# df.to_csv('../data/preprocessed/bank/train_bank.csv', index=False)
-# test_df.to_csv('../data/preprocessed/bank/test_bank.csv', index=False)
+df, pca_df, pca = PCA_outlier_remove(df, 0.03)
+df.to_csv('../data/preprocessed/bank/train_bank.csv', index=False)
+test_df.to_csv('../data/preprocessed/bank/test_bank.csv', index=False)
 
 
 fig, ax = plt.subplots(1, figsize=(10, 10))
