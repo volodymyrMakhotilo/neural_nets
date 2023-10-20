@@ -70,21 +70,26 @@ def PCA_outlier_remove(df, outlier_prop):
 
     return df[~pca_df['is_outlier'].values].reset_index(drop=True), pca_df, pca
 
+
+
+
 # # read data
 # df = pd.read_csv("../data/boston_housing/HousingData.csv")
 # df = df.dropna()
 # target_name = 'MEDV'
 
 
-# read data
-df = pd.read_csv("../data/bank/bank.csv")
-# drop unnecessary attributes
-df = df.drop(labels=['default', 'contact', 'day', 'month', 'pdays', 'previous', 'loan', 'poutcome'], axis=1)
-target_name = 'deposit'
-target_mapping = {'no': 0, 'yes': 1}
-df[target_name] = df[target_name].replace(target_mapping)
+def get_bank_data():
+    df = pd.read_csv("data/bank/bank.csv")
+    # drop unnecessary attributes
+    df = df.drop(labels=['default', 'contact', 'day', 'month', 'pdays', 'previous', 'loan', 'poutcome'], axis=1)
+    target_name = 'deposit'
+    target_mapping = {'no': 0, 'yes': 1}
+    df[target_name] = df[target_name].replace(target_mapping)
+    return df[[column for column in df.columns if column != target_name]].to_numpy(), df[target_name].to_numpy()
 
 
+'''
 # # dataset info
 # check_df(df)
 
@@ -139,3 +144,4 @@ plt.tight_layout()
 
 plt.show()
 
+'''

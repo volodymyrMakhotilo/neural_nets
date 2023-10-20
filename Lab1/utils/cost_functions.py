@@ -32,7 +32,6 @@ class Sparse_Categorical_Crossentropy(Cost_Function):
         return loss
 
     def derivative(self, y_true, y_pred):
-
         return -(y_true / (y_pred + 1E-10))
 
 
