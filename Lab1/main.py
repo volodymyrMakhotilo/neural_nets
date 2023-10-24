@@ -2,10 +2,11 @@ import numpy as np
 import pandas as pd
 from numpy import sqrt
 from numpy.random import uniform, randn
-from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE
+from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE, Binary_Crossentropy
 from utils.optimizers import gradient_descent
 from utils.activations import ReLU, Softmax, Sigmoid, Linear
 from utils.metrics import accuracy_categorical
+from utils.metrics import metrics_binary
 from sklearn.datasets import make_classification
 from sklearn.preprocessing import OneHotEncoder
 
@@ -49,9 +50,12 @@ class Layer:
 
 class Neural_Net:
     # FIX COST AND OPT INIT
-    def __init__(self, X_train, y_train, cost_function):
+    def __init__(self, X_train, y_train, X_test, y_test, metric, cost_function):
         self.X_train = X_train
         self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
+        self.metric = metric
         self.layers = []
         #SPECIFY COST
         self.cost_function = cost_function
@@ -60,12 +64,15 @@ class Neural_Net:
 
     # Didn't put much thought in code
     # Batch is not coded
-    def forward_propagation(self, batch):
-        output = batch
+    def forward_propagation(self, batch_train, batch_test):
+        output_train = batch_train
+        output_test = batch_test
         for layer in self.layers:
-            output = layer.forward(output)
-        print('loss', self.cost_function.compute(self.y_train, output), 'acc', accuracy_categorical(self.y_train, output))
-        return output
+            output_train = layer.forward(output_train)
+            output_test = layer.forward(output_test)
+        print('loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
+              "loss_test", self.cost_function.compute(self.y_test, output_test), 'acc', self.metric(self.y_test, output_test))
+        return output_train, output_test
 
     def backward_propagation(self, dX):
         dX = dX
@@ -78,7 +85,7 @@ class Neural_Net:
 
     def iteration(self):
         # Pass batch
-        y_pred = self.forward_propagation(self.X_train)
+        y_pred = self.forward_propagation(self.X_train, self.X_test)
         loss = self.cost(y_pred)
 
 
@@ -92,7 +99,7 @@ class Neural_Net:
     #Batch
     def fit(self, epochs):
         for epoch in range(epochs):
-            y_pred = self.forward_propagation(self.X_train)
+            y_pred = self.forward_propagation(self.X_train, self.X_test)
             self.backward_propagation(self.cost_function.derivative(self.y_train, y_pred))
             self.update_epoch(epoch)
 
@@ -100,22 +107,24 @@ class Neural_Net:
         self.layers.append(layer)
 
 def main():
-    data = pd.read_csv("data/preprocessed/bank/test_bank.csv")
-    X = data.drop('deposit', axis=1).to_numpy()
-    y = np.expand_dims(data['deposit'].to_numpy(),axis=-1)
+    data_test = pd.read_csv("data/preprocessed/bank/test_bank.csv")
+    data_train = pd.read_csv("data/preprocessed/bank/train_bank.csv")
+    X_test = data_test.drop('deposit', axis=1).to_numpy()
+    y_test = np.expand_dims(data_test['deposit'].to_numpy(), axis=-1)
+    X_train = data_train.drop('deposit', axis=1).to_numpy()
+    y_train = np.expand_dims(data_train['deposit'].to_numpy(), axis=-1)
     #make_classification(n_samples=6, n_features=3, n_informative=3, n_redundant=0, n_clusters_per_class=1, n_classes= 3)
     #enc = OneHotEncoder()
     #y = enc.fit_transform(np.expand_dims(y, axis=-1)).toarray()
 
-    print(X.shape)
-    print(y.shape)
+    print(X_test.shape)
+    print(y_test.shape)
 
 
+    model = Neural_Net(X_train, y_train, X_test, y_test, metrics_binary, Binary_Crossentropy())
 
-    model = Neural_Net(X, y, MSE())
-
-    hidden_layer = Layer(X.shape[-1], 5, ReLU())
-    output_layer = Layer(hidden_layer.output_size, 1, Linear())
+    hidden_layer = Layer(X_test.shape[-1], 5, ReLU())
+    output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())
 
     model.add(hidden_layer)
     model.add(output_layer)
