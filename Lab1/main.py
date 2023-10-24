@@ -100,9 +100,9 @@ class Neural_Net:
         self.layers.append(layer)
 
 def main():
-    data = pd.read_csv("data/preprocessed/boston_housing/train_boston_housing.csv")
-    X = data.drop('MEDV', axis=1).to_numpy()
-    y = np.expand_dims(data['MEDV'].to_numpy() ,axis=-1)
+    data = pd.read_csv("data/preprocessed/bank/test_bank.csv")
+    X = data.drop('deposit', axis=1).to_numpy()
+    y = np.expand_dims(data['deposit'].to_numpy(),axis=-1)
     #make_classification(n_samples=6, n_features=3, n_informative=3, n_redundant=0, n_clusters_per_class=1, n_classes= 3)
     #enc = OneHotEncoder()
     #y = enc.fit_transform(np.expand_dims(y, axis=-1)).toarray()
