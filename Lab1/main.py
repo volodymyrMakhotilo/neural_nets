@@ -5,10 +5,11 @@ from numpy.random import uniform, randn
 from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE, Binary_Crossentropy
 from utils.optimizers import gradient_descent
 from utils.activations import ReLU, Softmax, Sigmoid, Linear
-from utils.metrics import accuracy_categorical
+from utils.metrics import accuracy_categorical, accuracy_binary
 from utils.metrics import metrics_binary
 from sklearn.datasets import make_classification
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import normalize
 
 class Layer:
     # Shapes should be compatible for matrix multiplication
@@ -25,7 +26,9 @@ class Layer:
     def forward(self, X):
         self.batch_size = X.shape[0]
         self.cached_input = X
-        return self.activation.compute(self.compute_linear(X))
+        z = self.compute_linear(X)
+        a = self.activation.compute(z)
+        return a
 
     def compute_linear(self, X):
         return np.matmul(X, self.weights.T) + self.bias
@@ -46,7 +49,7 @@ class Layer:
     # Experiment!
     def weights_init(self, width, height):
         lower, upper = -(sqrt(6.0) / sqrt(self.input_size + self.output_size)), (sqrt(6.0) / sqrt(self.input_size + self.batch_size))
-        return lower + np.random.randn(width, height) * (upper - lower)
+        return np.random.randn(width, height)
 
 class Neural_Net:
     # FIX COST AND OPT INIT
@@ -68,11 +71,11 @@ class Neural_Net:
         output_train = batch_train
         output_test = batch_test
         for layer in self.layers:
-            output_train = layer.forward(output_train)
             output_test = layer.forward(output_test)
+            output_train = layer.forward(output_train)
         print('loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
               "loss_test", self.cost_function.compute(self.y_test, output_test), 'acc', self.metric(self.y_test, output_test))
-        return output_train, output_test
+        return output_train
 
     def backward_propagation(self, dX):
         dX = dX
@@ -99,8 +102,8 @@ class Neural_Net:
     #Batch
     def fit(self, epochs):
         for epoch in range(epochs):
-            y_pred = self.forward_propagation(self.X_train, self.X_test)
-            self.backward_propagation(self.cost_function.derivative(self.y_train, y_pred))
+            y_pred_train = self.forward_propagation(self.X_train, self.X_test)
+            self.backward_propagation(self.cost_function.derivative(self.y_train, y_pred_train))
             self.update_epoch(epoch)
 
     def add(self, layer):
@@ -121,15 +124,15 @@ def main():
     print(y_test.shape)
 
 
-    model = Neural_Net(X_train, y_train, X_test, y_test, metrics_binary, Binary_Crossentropy())
+    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy())
 
-    hidden_layer = Layer(X_test.shape[-1], 5, ReLU())
+    hidden_layer = Layer(X_test.shape[-1], 8, ReLU())
     output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())
 
     model.add(hidden_layer)
     model.add(output_layer)
 
-    model.fit(50)
+    model.fit(500)
 
 
 if __name__ == '__main__':

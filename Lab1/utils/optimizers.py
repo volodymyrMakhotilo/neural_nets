@@ -1,6 +1,6 @@
 # THIS FILE IS A MESS
 
-alpha = 0.0001
+alpha = 1
 
 def gradient_descent(x, dx, epoch):
-    return x - 0.95**epoch * alpha * dx
+    return x - 0.999 ** epoch * alpha * dx

@@ -46,7 +46,7 @@ class Linear(Activation_Function):
     def compute(self, x):
         return x
     def derivative(self, x):
-        return 1
+        return np.ones_like(x)
 
 class Softmax(Activation_Function):
     def compute(self, x):
@@ -59,4 +59,6 @@ class Softmax(Activation_Function):
     def derivative(self, x):
         return self.compute(x) * (1 - self.compute(x))
 
+
+print()
 

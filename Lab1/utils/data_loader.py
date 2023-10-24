@@ -4,6 +4,7 @@ import seaborn as sb
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
 
 def get_highly_correlated_features(df, num_features, corr_threshold=0.90):
     corr_df = df[num_features].corr(method='pearson')
@@ -25,6 +26,12 @@ def check_df(dataframe):
     print(dataframe.isnull().sum())
     print("##################### Quantiles #####################")
     print(dataframe.quantile([0, 0.05, 0.50, 0.95, 0.99, 1]).T)
+
+def normilize(df, columns):
+    input_data = df[columns].astype(np.float64)
+    df[columns] = (input_data - input_data.min()) / (input_data.max() - input_data.min())
+    return df
+
 
 def grab_col_names(dataframe, cat_th=10, car_th=20):
     # cat_cols, cat_but_car
@@ -128,6 +135,10 @@ if len(cat_features) > 0:
 # test_df.to_csv('../data/preprocessed/boston_housing/test_boston_housing.csv', index=False)
 
 df, pca_df, pca = PCA_outlier_remove(df, 0.03)
+
+df = normilize(df, df.columns[:-1])
+test_df = normilize(test_df, test_df.columns[:-1])
+
 df.to_csv('../data/preprocessed/bank/train_bank.csv', index=False)
 test_df.to_csv('../data/preprocessed/bank/test_bank.csv', index=False)
 
