@@ -84,6 +84,14 @@ target_name = 'deposit'
 target_mapping = {'no': 0, 'yes': 1}
 df[target_name] = df[target_name].replace(target_mapping)
 
+df["job"] = df["job"].replace({"admin.": 0, "technician": 1, "services": 2,
+                               "management": 3, "retired": 4, "blue-collar": 5,
+                               "unemployed": 6, "entrepreneur": 7, "housemaid": 8,
+                               "unknown": 9, "self-employed": 10, "student": 11})
+df["marital"] = df["marital"].replace({"single": 0, "married": 1, "divorced": 2})
+df["education"] = df["education"].replace({"secondary": 0, "tertiary": 1, "primary": 2, "unknown": 3})
+df["housing"] = df["housing"].replace({'no': 0, 'yes': 1})
+
 
 # # dataset info
 # check_df(df)
@@ -138,4 +146,3 @@ sb.heatmap(df.corr(), annot=True)
 plt.tight_layout()
 
 plt.show()
-
