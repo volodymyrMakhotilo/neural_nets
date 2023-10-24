@@ -46,7 +46,7 @@ class Linear(Activation_Function):
     def compute(self, x):
         return x
     def derivative(self, x):
-        return x
+        return 1
 
 class Softmax(Activation_Function):
     def compute(self, x):
