@@ -1,5 +1,5 @@
 # THIS FILE IS A MESS
-import numpy as np
+import  numpy as np
 
 alpha = 6
 
