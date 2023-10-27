@@ -53,7 +53,7 @@ class Layer:
 
 class Neural_Net:
     # FIX COST AND OPT INIT
-    def __init__(self, X_train, y_train, X_test, y_test, metric, cost_function):
+    def __init__(self, X_train, y_train, X_test, y_test, cost_function, metric=None):
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
@@ -73,8 +73,12 @@ class Neural_Net:
         for layer in self.layers:
             output_test = layer.forward(output_test)
             output_train = layer.forward(output_train)
-        print('loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
-              "loss_test", self.cost_function.compute(self.y_test, output_test), 'acc', self.metric(self.y_test, output_test))
+
+        if self.metric is not None:
+            print('loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
+                  "loss_test", self.cost_function.compute(self.y_test, output_test), 'acc', self.metric(self.y_test, output_test))
+        else:
+            print('loss_train', self.cost_function.compute(self.y_train, output_train), "loss_test", self.cost_function.compute(self.y_test, output_test))
         return output_train
 
     def backward_propagation(self, dX):
@@ -110,12 +114,13 @@ class Neural_Net:
         self.layers.append(layer)
 
 def main():
-    data_test = pd.read_csv("data/preprocessed/bank/test_bank.csv")
-    data_train = pd.read_csv("data/preprocessed/bank/train_bank.csv")
-    X_test = data_test.drop('deposit', axis=1).to_numpy()
-    y_test = np.expand_dims(data_test['deposit'].to_numpy(), axis=-1)
-    X_train = data_train.drop('deposit', axis=1).to_numpy()
-    y_train = np.expand_dims(data_train['deposit'].to_numpy(), axis=-1)
+    data_test = pd.read_csv("data/preprocessed/boston_housing/test_boston_housing.csv")
+    data_train = pd.read_csv("data/preprocessed/boston_housing/train_boston_housing.csv")
+    target_label = data_train.columns[-1]
+    X_test = data_test.drop(target_label, axis=1).to_numpy()
+    y_test = np.expand_dims(data_test[target_label].to_numpy(), axis=-1)
+    X_train = data_train.drop(target_label, axis=1).to_numpy()
+    y_train = np.expand_dims(data_train[target_label].to_numpy(), axis=-1)
     #make_classification(n_samples=6, n_features=3, n_informative=3, n_redundant=0, n_clusters_per_class=1, n_classes= 3)
     #enc = OneHotEncoder()
     #y = enc.fit_transform(np.expand_dims(y, axis=-1)).toarray()
@@ -124,15 +129,15 @@ def main():
     print(y_test.shape)
 
 
-    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy())
+    model = Neural_Net(X_train, y_train, X_test, y_test, MSE())
 
     hidden_layer = Layer(X_test.shape[-1], 8, ReLU())
-    output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())
+    output_layer = Layer(hidden_layer.output_size, 1, Linear())
 
     model.add(hidden_layer)
     model.add(output_layer)
 
-    model.fit(500)
+    model.fit(1000)
 
 
 if __name__ == '__main__':
