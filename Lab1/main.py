@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from numpy import sqrt
+from numpy.random import shuffle
 from numpy.random import uniform, randn
 from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE, Binary_Crossentropy
 from utils.optimizers import gradient_descent
@@ -10,6 +11,7 @@ from utils.metrics import metrics_binary
 from sklearn.datasets import make_classification
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import normalize
+
 
 class Layer:
     # Shapes should be compatible for matrix multiplication
@@ -40,42 +42,50 @@ class Layer:
         self.bias = gradient_descent(self.bias, db, self.epoch)
 
     def backward(self, dX):
-      grad = dX * self.activation.derivative(self.compute_linear(self.cached_input))
-      ouput = np.matmul(grad, self.weights)
-      self.update(grad)
+        grad = dX * self.activation.derivative(self.compute_linear(self.cached_input))
+        ouput = np.matmul(grad, self.weights)
+        self.update(grad)
 
-      return ouput
+        return ouput
 
     # Experiment!
     def weights_init(self, width, height):
-        lower, upper = -(sqrt(6.0) / sqrt(self.input_size + self.output_size)), (sqrt(6.0) / sqrt(self.input_size + self.batch_size))
+        lower, upper = -(sqrt(6.0) / sqrt(self.input_size + self.output_size)), (
+                sqrt(6.0) / sqrt(self.input_size + self.batch_size))
         return np.random.randn(width, height)
+
 
 class Neural_Net:
     # FIX COST AND OPT INIT
-    def __init__(self, X_train, y_train, X_test, y_test, metric, cost_function):
+    def __init__(self, X_train, y_train, X_test, y_test, metric, cost_function, batch_size):
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
         self.metric = metric
         self.layers = []
-        #SPECIFY COST
+        # SPECIFY COST
         self.cost_function = cost_function
-        #SPECIFY OPTIMIZER
+        # SPECIFY OPTIMIZER
         self.optimizer = gradient_descent
+
+        self.batch_size = batch_size
 
     # Didn't put much thought in code
     # Batch is not coded
-    def forward_propagation(self, batch_train, batch_test):
-        output_train = batch_train
-        output_test = batch_test
+    def forward_propagation(self, batch):
+        output = batch
         for layer in self.layers:
-            output_test = layer.forward(output_test)
-            output_train = layer.forward(output_train)
-        print('loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
-              "loss_test", self.cost_function.compute(self.y_test, output_test), 'acc', self.metric(self.y_test, output_test))
-        return output_train
+            output = layer.forward(output)
+        return output
+
+    def get_batch_generator(self, X, y, batch_size):
+        batches_num = np.ceil(X.shape[0] / batch_size)
+        batches_indexes = np.arange(batches_num).astype(np.int64)
+        # Inplace operation for some reason
+        shuffle(batches_indexes)
+        for batch_index in batches_indexes:
+            yield X[batch_index:batch_index + 1, :], y[batch_index:batch_index + 1, :]
 
     def backward_propagation(self, dX):
         dX = dX
@@ -85,13 +95,6 @@ class Neural_Net:
     def cost(self, y_true, y_pred):
         pass
 
-
-    def iteration(self):
-        # Pass batch
-        y_pred = self.forward_propagation(self.X_train, self.X_test)
-        loss = self.cost(y_pred)
-
-
     def optimizer(self):
         pass
 
@@ -99,15 +102,29 @@ class Neural_Net:
         for layer in self.layers:
             layer.epoch = epoch
 
-    #Batch
+    def training_iteration(self, batch_gen, epoch):
+        for batch_x, batch_y in batch_gen:
+            y_pred_train = self.forward_propagation(batch_x)
+            self.backward_propagation(self.cost_function.derivative(batch_y, y_pred_train))
+            self.update_epoch(epoch)
+
     def fit(self, epochs):
         for epoch in range(epochs):
-            y_pred_train = self.forward_propagation(self.X_train, self.X_test)
-            self.backward_propagation(self.cost_function.derivative(self.y_train, y_pred_train))
-            self.update_epoch(epoch)
+            batch_train_gen = self.get_batch_generator(self.X_train, self.y_train, self.batch_size)
+
+            self.training_iteration(batch_train_gen, epoch)
+
+            y_pred_train = self.forward_propagation(self.X_train)
+            y_pred_test = self.forward_propagation(self.X_test)
+
+            print('loss_train', self.cost_function.compute(self.y_train, y_pred_train), 'acc',
+                  self.metric(self.y_train, y_pred_train),
+                  "loss_test", self.cost_function.compute(self.y_test, y_pred_test), 'acc',
+                  self.metric(self.y_test, y_pred_test))
 
     def add(self, layer):
         self.layers.append(layer)
+
 
 def main():
     data_test = pd.read_csv("data/preprocessed/bank/test_bank.csv")
@@ -116,17 +133,16 @@ def main():
     y_test = np.expand_dims(data_test['deposit'].to_numpy(), axis=-1)
     X_train = data_train.drop('deposit', axis=1).to_numpy()
     y_train = np.expand_dims(data_train['deposit'].to_numpy(), axis=-1)
-    #make_classification(n_samples=6, n_features=3, n_informative=3, n_redundant=0, n_clusters_per_class=1, n_classes= 3)
-    #enc = OneHotEncoder()
-    #y = enc.fit_transform(np.expand_dims(y, axis=-1)).toarray()
+    # make_classification(n_samples=6, n_features=3, n_informative=3, n_redundant=0, n_clusters_per_class=1, n_classes= 3)
+    # enc = OneHotEncoder()
+    # y = enc.fit_transform(np.expand_dims(y, axis=-1)).toarray()
 
     print(X_test.shape)
     print(y_test.shape)
 
+    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy(), 1)
 
-    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy())
-
-    hidden_layer = Layer(X_test.shape[-1], 8, ReLU())
+    hidden_layer = Layer(X_test.shape[-1], 8, Sigmoid())
     output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())
 
     model.add(hidden_layer)
