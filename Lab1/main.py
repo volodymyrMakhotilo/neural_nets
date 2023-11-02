@@ -4,7 +4,7 @@ from numpy import sqrt
 from numpy.random import shuffle
 from numpy.random import uniform, randn
 from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE, Binary_Crossentropy
-from utils.optimizers import gradient_descent
+from utils.optimizers import *
 from utils.activations import ReLU, Softmax, Sigmoid, Linear
 from utils.metrics import accuracy_categorical, accuracy_binary
 from utils.metrics import metrics_binary
@@ -25,6 +25,7 @@ class Layer:
         self.activation = activation
         self.cached_input = np.NaN
 
+
     def forward(self, X):
         self.batch_size = X.shape[0]
         self.cached_input = X
@@ -35,18 +36,17 @@ class Layer:
     def compute_linear(self, X):
         return np.matmul(X, self.weights.T) + self.bias
 
-    def update(self, grad):
+    def get_param_grad(self, grad):
         dW = np.matmul(grad.T, self.cached_input) / self.batch_size
-        db = np.mean(grad, axis=0)
-        self.weights = gradient_descent(self.weights, dW, self.epoch)
-        self.bias = gradient_descent(self.bias, db, self.epoch)
+        db = np.mean(grad, axis=0, keepdims=True)
+        return dW, db
 
     def backward(self, dX):
         grad = dX * self.activation.derivative(self.compute_linear(self.cached_input))
-        ouput = np.matmul(grad, self.weights)
-        self.update(grad)
+        output = np.matmul(grad, self.weights)
+        dW, db = self.get_param_grad(grad)
 
-        return ouput
+        return output, dW, db
 
     # Experiment!
     def weights_init(self, width, height):
@@ -57,7 +57,7 @@ class Layer:
 
 class Neural_Net:
     # FIX COST AND OPT INIT
-    def __init__(self, X_train, y_train, X_test, y_test, metric, cost_function, batch_size):
+    def __init__(self, X_train, y_train, X_test, y_test, metric, cost_function, optimizer: Optimizer, batch_size):
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
@@ -67,7 +67,7 @@ class Neural_Net:
         # SPECIFY COST
         self.cost_function = cost_function
         # SPECIFY OPTIMIZER
-        self.optimizer = gradient_descent
+        self.optimizer = optimizer
 
         self.batch_size = batch_size
 
@@ -87,10 +87,12 @@ class Neural_Net:
         for batch_index in batches_indexes:
             yield X[batch_index:batch_index + 1, :], y[batch_index:batch_index + 1, :]
 
-    def backward_propagation(self, dX):
-        dX = dX
-        for layer in self.layers[::-1]:
-            dX = layer.backward(dX)
+    def backward_propagation(self, grad):
+        grad = grad
+        layers_num = len(self.layers) - 1
+        for iter_, layer in enumerate(self.layers[::-1]):
+            grad, dW, db = layer.backward(grad)
+            layer.weights, layer.bias = self.optimizer.update(layer.weights, layer.bias, dW, db, layer.epoch, layer_num=layers_num-iter_)
 
     def cost(self, y_true, y_pred):
         pass
@@ -140,7 +142,7 @@ def main():
     print(X_test.shape)
     print(y_test.shape)
 
-    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy(), 1)
+    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy(), AdaGrad(0.1, 2), 8)
 
     hidden_layer = Layer(X_test.shape[-1], 8, Sigmoid())
     output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())
