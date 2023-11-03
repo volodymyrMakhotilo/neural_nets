@@ -19,7 +19,6 @@ class Layer:
         self.batch_size = 0
         self.input_size = input_size
         self.output_size = output_size
-        self.epoch = 0
         self.bias = self.weights_init(1, output_size)
         self.weights = self.weights_init(output_size, input_size)
         self.activation = activation
@@ -87,12 +86,12 @@ class Neural_Net:
         for batch_index in batches_indexes:
             yield X[batch_index:batch_index + 1, :], y[batch_index:batch_index + 1, :]
 
-    def backward_propagation(self, grad):
+    def backward_propagation(self, grad, epoch):
         grad = grad
         layers_num = len(self.layers) - 1
         for iter_, layer in enumerate(self.layers[::-1]):
             grad, dW, db = layer.backward(grad)
-            layer.weights, layer.bias = self.optimizer.update(layer.weights, layer.bias, dW, db, layer.epoch, layer_num=layers_num-iter_)
+            layer.weights, layer.bias = self.optimizer.update(layer.weights, layer.bias, dW, db, epoch, layer_num=layers_num-iter_)
 
     def cost(self, y_true, y_pred):
         pass
@@ -107,11 +106,11 @@ class Neural_Net:
     def training_iteration(self, batch_gen, epoch):
         for batch_x, batch_y in batch_gen:
             y_pred_train = self.forward_propagation(batch_x)
-            self.backward_propagation(self.cost_function.derivative(batch_y, y_pred_train))
+            self.backward_propagation(self.cost_function.derivative(batch_y, y_pred_train), epoch)
             self.update_epoch(epoch)
 
     def fit(self, epochs):
-        for epoch in range(epochs):
+        for epoch in range(1, epochs+1):
             batch_train_gen = self.get_batch_generator(self.X_train, self.y_train, self.batch_size)
 
             self.training_iteration(batch_train_gen, epoch)

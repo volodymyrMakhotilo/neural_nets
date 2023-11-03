@@ -110,11 +110,12 @@ class Adam(Optimizer):
                                                                                                  keepdims=True)
         self.dbms[layer_num] = self.betta_m * self.dbms[layer_num] + (1 - self.betta_m) * np.sum(db, axis=-1,
                                                                                                  keepdims=True)
-        if epoch <= 1:
-            self.dWvs[layer_num] = self.dWvs[layer_num] / (1 - self.betta_v)
-            self.dbvs[layer_num] = self.dbvs[layer_num] / (1 - self.betta_v)
-            self.dWms[layer_num] = self.dWms[layer_num] / (1 - self.betta_m)
-            self.dbms[layer_num] = self.dbms[layer_num] / (1 - self.betta_m)
+
+
+        self.dWvs[layer_num] = self.dWvs[layer_num] / (1 - self.betta_v ** epoch)
+        self.dbvs[layer_num] = self.dbvs[layer_num] / (1 - self.betta_v ** epoch)
+        self.dWms[layer_num] = self.dWms[layer_num] / (1 - self.betta_m ** epoch)
+        self.dbms[layer_num] = self.dbms[layer_num] / (1 - self.betta_m ** epoch)
 
         W = W - self.compute_change(self.dWms[layer_num], epoch, self.dWvs[layer_num])
         b = b - self.compute_change(self.dbms[layer_num], epoch, self.dbvs[layer_num])
