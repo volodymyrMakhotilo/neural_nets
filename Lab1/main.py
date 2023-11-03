@@ -141,7 +141,7 @@ def main():
     print(X_test.shape)
     print(y_test.shape)
 
-    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy(), Adam(0.01, 0.9, 0.9, 2), 64)
+    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy(), Adam(0.01,  0.99,0.999,2), 64)
 
     hidden_layer = Layer(X_test.shape[-1], 8, Sigmoid())
     output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())

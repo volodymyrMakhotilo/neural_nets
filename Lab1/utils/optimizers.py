@@ -28,7 +28,7 @@ class Optimizer(ABC):
         return dWs, dbs
 
     def clip(self, grad):
-        #grad[grad == 0] = 1E-3
+        grad[grad == 0] = e
         return np.clip(grad, -1, 1)
 
 
@@ -53,8 +53,8 @@ class AdaGrad(Optimizer):
             self.dbs[layer_num] = 0
 
     def update(self, W, b, dW, db, epoch, layer_num):
-        self.dWs[layer_num] += np.sum(dW ** 2, axis=-1, keepdims=True)
-        self.dbs[layer_num] += np.sum(db ** 2, axis=-1, keepdims=True)
+        self.dWs[layer_num] += dW ** 2
+        self.dbs[layer_num] += db ** 2
 
         W = W - self.compute_change(dW, epoch, self.dWs[layer_num])
         b = b - self.compute_change(db, epoch, self.dbs[layer_num])
@@ -77,10 +77,8 @@ class RMSprop(Optimizer):
         self.betta = betta
 
     def update(self, W, b, dW, db, epoch, layer_num):
-        self.dWs[layer_num] = self.betta * self.dWs[layer_num] + (1 - self.betta) * np.sum(dW ** 2, axis=-1,
-                                                                                           keepdims=True)
-        self.dbs[layer_num] = self.betta * self.dbs[layer_num] + (1 - self.betta) * np.sum(db ** 2, axis=-1,
-                                                                                           keepdims=True)
+        self.dWs[layer_num] = self.betta * self.dWs[layer_num] + (1 - self.betta) * dW ** 2
+        self.dbs[layer_num] = self.betta * self.dbs[layer_num] + (1 - self.betta) * db ** 2
 
         W = W - self.compute_change(dW, epoch, self.dWs[layer_num])
         b = b - self.compute_change(db, epoch, self.dbs[layer_num])
@@ -102,23 +100,18 @@ class Adam(Optimizer):
         self.betta_v = betta_v
 
     def update(self, W, b, dW, db, epoch, layer_num):
-        self.dWvs[layer_num] = self.betta_v * self.dWvs[layer_num] + (1 - self.betta_v) * np.sum(dW ** 2, axis=-1,
-                                                                                                 keepdims=True)
-        self.dbvs[layer_num] = self.betta_v * self.dbvs[layer_num] + (1 - self.betta_v) * np.sum(db ** 2, axis=-1,
-                                                                                                 keepdims=True)
-        self.dWms[layer_num] = self.betta_m * self.dWms[layer_num] + (1 - self.betta_m) * np.sum(dW, axis=-1,
-                                                                                                 keepdims=True)
-        self.dbms[layer_num] = self.betta_m * self.dbms[layer_num] + (1 - self.betta_m) * np.sum(db, axis=-1,
-                                                                                                 keepdims=True)
+        self.dWvs[layer_num] = self.betta_v * self.dWvs[layer_num] + (1 - self.betta_v) * dW ** 2
+        self.dbvs[layer_num] = self.betta_v * self.dbvs[layer_num] + (1 - self.betta_v) * db ** 2
+        self.dWms[layer_num] = self.betta_m * self.dWms[layer_num] + (1 - self.betta_m) * dW
+        self.dbms[layer_num] = self.betta_m * self.dbms[layer_num] + (1 - self.betta_m) * db
 
+        dWvs_corr = self.dWvs[layer_num] / (1 - self.betta_v ** epoch)
+        dWms_corr = self.dWms[layer_num] / (1 - self.betta_m ** epoch)
+        dbvs_corr = self.dbvs[layer_num] / (1 - self.betta_v ** epoch)
+        dbms_corr = self.dbms[layer_num] / (1 - self.betta_m ** epoch)
 
-        self.dWvs[layer_num] = self.dWvs[layer_num] / (1 - self.betta_v ** epoch)
-        self.dbvs[layer_num] = self.dbvs[layer_num] / (1 - self.betta_v ** epoch)
-        self.dWms[layer_num] = self.dWms[layer_num] / (1 - self.betta_m ** epoch)
-        self.dbms[layer_num] = self.dbms[layer_num] / (1 - self.betta_m ** epoch)
-
-        W = W - self.compute_change(self.dWms[layer_num], epoch, self.dWvs[layer_num])
-        b = b - self.compute_change(self.dbms[layer_num], epoch, self.dbvs[layer_num])
+        W = W - self.compute_change(dWms_corr, epoch, dWvs_corr)
+        b = b - self.compute_change(dbms_corr, epoch, dbvs_corr)
 
         return W, b
 
