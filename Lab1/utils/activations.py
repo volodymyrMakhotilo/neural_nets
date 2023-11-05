@@ -22,8 +22,20 @@ class ReLU(Activation_Function):
         return dx
 
 class Sigmoid(Activation_Function):
-    def compute(self, x):
+    def positive_sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
+
+    def negative_sigmoid(self, x):
+        exp = np.exp(x)
+        return exp / (exp + 1)
+
+    def compute(self, x):
+        positive = x >= 0
+        negative = ~positive
+        result = np.empty_like(x, dtype=np.float64)
+        result[positive] = self.positive_sigmoid(x[positive])
+        result[negative] = self.negative_sigmoid(x[negative])
+        return result
 
     def derivative(self, x):
         return self.compute(x) * (1 - self.compute(x))
