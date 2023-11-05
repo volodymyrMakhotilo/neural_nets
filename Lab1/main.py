@@ -4,7 +4,7 @@ from numpy import sqrt
 from numpy.random import uniform, randn
 from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE, Binary_Crossentropy
 from utils.optimizers import gradient_descent
-from utils.activations import ReLU, Softmax, Sigmoid, Linear
+from utils.activations import *
 from utils.metrics import accuracy_categorical, accuracy_binary
 from utils.metrics import metrics_binary
 from sklearn.datasets import make_classification
@@ -67,7 +67,7 @@ class Neural_Net:
 
     # Didn't put much thought in code
     # Batch is not coded
-    def forward_propagation(self, batch_train, batch_test):
+    def forward_propagation(self, batch_train, batch_test, epoch):
         output_train = batch_train
         output_test = batch_test
         for layer in self.layers:
@@ -75,10 +75,10 @@ class Neural_Net:
             output_train = layer.forward(output_train)
 
         if self.metric is not None:
-            print('loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
+            print(epoch, ' loss_train', self.cost_function.compute(self.y_train, output_train), 'acc', self.metric(self.y_train, output_train),
                   "loss_test", self.cost_function.compute(self.y_test, output_test), 'acc', self.metric(self.y_test, output_test))
         else:
-            print('loss_train', self.cost_function.compute(self.y_train, output_train), "loss_test", self.cost_function.compute(self.y_test, output_test))
+            print(epoch, ' loss_train', self.cost_function.compute(self.y_train, output_train), "loss_test", self.cost_function.compute(self.y_test, output_test))
         return output_train
 
     def backward_propagation(self, dX):
@@ -105,8 +105,8 @@ class Neural_Net:
 
     #Batch
     def fit(self, epochs):
-        for epoch in range(epochs):
-            y_pred_train = self.forward_propagation(self.X_train, self.X_test)
+        for epoch in range(1, epochs+1):
+            y_pred_train = self.forward_propagation(self.X_train, self.X_test, epoch)
             self.backward_propagation(self.cost_function.derivative(self.y_train, y_pred_train))
             self.update_epoch(epoch)
 
@@ -131,13 +131,13 @@ def main():
 
     model = Neural_Net(X_train, y_train, X_test, y_test, MSE())
 
-    hidden_layer = Layer(X_test.shape[-1], 8, ReLU())
+    hidden_layer = Layer(X_test.shape[-1], 8, TanH())
     output_layer = Layer(hidden_layer.output_size, 1, Linear())
 
     model.add(hidden_layer)
     model.add(output_layer)
 
-    model.fit(1000)
+    model.fit(100)
 
 
 if __name__ == '__main__':
