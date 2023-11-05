@@ -30,7 +30,7 @@ class Sigmoid(Activation_Function):
 
 class TanH(Activation_Function):
     def compute(self, x):
-        return m.tanh(x)
+        return np.tanh(x)
 
     def derivative(self, x):
         return 1 - self.compute(x) ** 2
@@ -39,9 +39,9 @@ class LeakyReLU(Activation_Function):
     def compute(self, x):
         return np.maximum(0.01 * x, x)
     def derivative(self, x):
-        if x < 0: return 0.01
-        else: return 1
-
+        x[x < 0] = 0.01
+        x[x >= 0] = 1
+        return x
 class Linear(Activation_Function):
     def compute(self, x):
         return x
