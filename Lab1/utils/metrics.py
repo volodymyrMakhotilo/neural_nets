@@ -23,5 +23,6 @@ def metrics_reggresion(arr_test, arr_pred):
 
 def accuracy_binary(y_true, y_pred):
     return np.sum(y_true == np.round(y_pred)) / y_true.shape[0]
+
 def accuracy_categorical(y_true, y_pred):
     return np.sum(np.argmax(y_pred, axis=1, keepdims=True) == np.argmax(y_true, axis=1, keepdims=True)) / y_true.shape[0]
