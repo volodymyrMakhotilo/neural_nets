@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import classification_report
 
 def metrics_binary(arr_test, arr_pred):
     arr_test = np.array(arr_test)
@@ -17,8 +18,8 @@ def metrics_binary(arr_test, arr_pred):
 
     return res
 
-def metrics_reggresion(arr_test, arr_pred):
-    pass
+def metrics_classification(arr_test, arr_pred):
+    return classification_report(arr_test, arr_pred, digits=4, output_dict=True)
 
 
 def accuracy_binary(y_true, y_pred):
