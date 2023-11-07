@@ -19,8 +19,9 @@ def metrics_binary(arr_test, arr_pred):
     return res
 
 def metrics_classification(arr_test, arr_pred):
-    return classification_report(arr_test, arr_pred, digits=4, output_dict=True)
-
+    arr_pred = np.argmax(arr_pred, axis=-1)
+    res = classification_report(arr_test, arr_pred, digits=4, output_dict=True, zero_division=0)
+    return  res['accuracy'], res['macro avg']
 
 def accuracy_binary(y_true, y_pred):
     return np.sum(y_true == np.round(y_pred)) / y_true.shape[0]
