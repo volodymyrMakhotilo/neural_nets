@@ -6,7 +6,7 @@ from numpy.random import uniform, randn
 from utils.cost_functions import Sparse_Categorical_Crossentropy, MSE, Binary_Crossentropy
 from utils.optimizers import *
 from utils.activations import ReLU, Softmax, Sigmoid, Linear
-from utils.metrics import accuracy_categorical, accuracy_binary
+from utils.metrics import *
 from utils.metrics import metrics_binary
 from sklearn.datasets import make_classification
 from sklearn.preprocessing import OneHotEncoder
@@ -141,7 +141,7 @@ def main():
     print(X_test.shape)
     print(y_test.shape)
 
-    model = Neural_Net(X_train, y_train, X_test, y_test, accuracy_binary, Binary_Crossentropy(), Adam(0.01,  0.99,0.999,2), 64)
+    model = Neural_Net(X_train, y_train, X_test, y_test, metrics_classification, Binary_Crossentropy(), Adam(0.01,  0.9,0.99,2), 64)
 
     hidden_layer = Layer(X_test.shape[-1], 8, Sigmoid())
     output_layer = Layer(hidden_layer.output_size, 1, Sigmoid())
@@ -149,7 +149,7 @@ def main():
     model.add(hidden_layer)
     model.add(output_layer)
 
-    model.fit(500)
+    model.fit(100)
 
 
 if __name__ == '__main__':
