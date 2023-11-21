@@ -30,12 +30,13 @@ def main():
     config = {'x': 3,  # Grid m
               'y': 3,  # Grid n
               'input_len': features_num,  # SOM neuron dimension
-              'sigma': 1.0,
+              'sigma': 2,
               'learning_rate': 0.5,
-              'decay_function': asymptotic_decay,
-              'neighborhood_function': 'gaussian',
+              #'decay_function': asymptotic_decay,
+              'neighborhood_function': 'bubble',
               'topology': 'rectangular',
-              'activation_distance': 'euclidean', 'random_seed': None,
+              'activation_distance': 'euclidean',
+              'random_seed': None,
               }
 
     def order_arr(arr, depth=2):
@@ -46,15 +47,12 @@ def main():
     som = MiniSom(**config)
 
     som.pca_weights_init(data)
-    som.train(data, 1000, verbose=False)
+    som.train(data, 100, verbose=False)
     print('quantization_error', som.quantization_error(data))
     print('topographic_error', som.topographic_error(data))
 
     winner_coordinates = np.array([som.winner(sample) for sample in data]).T
 
-    print(som.labels_map(data, labels))
-
-    print(som.distance_map('mean'))
     #print(np.array(list(np.arange(config['y']))*config['x'])+1)
     #print(np.array(list(np.arange(config['y'], 0, step=-1))*config['x']).reshape(3, 3).T.reshape(-1))
     #print(som.distance_map().reshape(-1))
@@ -76,16 +74,17 @@ def main():
     points_x = points_relative_to_neurons[:, 0]
     points_y = points_relative_to_neurons[:, 1]
 
-    d, counts = np.unique(winner_cord_tuple, axis=0, return_counts=True)
+    _, counts = np.unique(winner_cord_tuple, axis=0, return_counts=True)
 
-    print(order_arr(d, depth=2))
-    print(order_arr(counts, depth=1).T)
+    print(counts)
+
     counts = order_arr(counts, depth=1).T
     counts = counts - np.min(counts)
-    counts = counts * 10
+    counts = counts
+
 
     sns.color_palette("ch:start=.2,rot=-.3", as_cmap=True)
-    sns.scatterplot(x=np.array(list(np.arange(config['y'], 0, step=-1))*config['x']).reshape(3, 3).T.reshape(-1),
+    sns.scatterplot(x=np.array(list(np.arange(config['y'], 0, step=-1))*config['x']).reshape(config['y'], config['x']).T.reshape(-1),
                     y=np.array(list(np.arange(config['y']))*config['x'])+1,
                     hue=1-som.distance_map('mean').reshape(-1),
                     vmax=(0, 1),
@@ -95,15 +94,20 @@ def main():
 
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
+
+
+
+
+    sns.scatterplot(x=points_x, y=points_y, alpha=1, hue=labels, hue_order=['black', 'red'])
+
+
     desired_ticks = [0, 1, 2, 3, 4]
 
     # Add grid lines at the specified ticks
     plt.xticks(desired_ticks)
     plt.yticks(desired_ticks)
     plt.grid(which='both', linestyle='-', linewidth=1, color='gray', alpha=0.5)
-
-    sns.scatterplot(x=points_x, y=points_y)
-
+    plt.legend([], [], frameon=False)
     plt.show()
 
 
