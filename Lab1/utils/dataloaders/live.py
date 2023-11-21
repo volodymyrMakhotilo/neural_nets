@@ -3,9 +3,7 @@ import numpy as np
 import seaborn as sb
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import normalize
 
 def get_highly_correlated_features(df, num_features, corr_threshold=0.90):
     corr_df = df[num_features].corr(method='pearson')
@@ -102,9 +100,6 @@ input_features = num_features + cat_features + cat_but_car
 if len(cat_features) != 0:
     df[cat_features] = df[cat_features].astype('category')
 
-test_size = 0.20
-df, test_df = train_test_split(df, test_size=test_size, random_state=42, stratify=df[target_name])
-
 
 fig, ax = plt.subplots(1, figsize=(10, 10))
 sb.heatmap(df.corr(), annot=True)
@@ -124,11 +119,8 @@ if len(cat_features) > 0:
 df, pca_df, pca = PCA_outlier_remove(df, 0.01)
 
 df = normilize(df, df.columns[1:])
-test_df = normilize(test_df, test_df.columns[1:])
 
-df.to_csv('../../data/preprocessed/live/train_live.csv', index=False)
-test_df.to_csv('../../data/preprocessed/live/test_live.csv', index=False)
-
+df.to_csv('../../data/preprocessed/live/live.csv', index=False)
 
 fig, ax = plt.subplots(1, figsize=(10, 10))
 sb.scatterplot(data=pca_df, x='V0', y='V1', hue='is_outlier', ax=ax)
