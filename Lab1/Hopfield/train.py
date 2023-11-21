@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jul 29 08:40:49 2018
-
-@author: user
-"""
-
 import numpy as np
 np.random.seed(1)
 from matplotlib import pyplot as plt
