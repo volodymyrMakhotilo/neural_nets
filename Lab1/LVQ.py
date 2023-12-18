@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from utils.metrics import metrics_classification
 
 
 
@@ -8,8 +9,9 @@ def euclidean(a, b):
     return np.sqrt(np.sum((a - b) **  2))
 
 class LVQ:
-    def __init__(self, data: pd.DataFrame, target, metric, alpha):
+    def __init__(self, data: pd.DataFrame, X_val, y_val, target, metric, alpha):
         self.X, self.y, self.weights = self.init_weights(data, target)
+        self.X_val, self.y_val = X_val, y_val
         self.metric = metric
         self.alpha = alpha
 
@@ -32,10 +34,17 @@ class LVQ:
         self.update(sample_X, bmu_index, sample_y)
 
     def train(self, epochs):
-        for _ in range(epochs):
+        for epoch in range(epochs):
             rand_idx = np.random.randint(self.X.shape[0])
             sample_X, sample_y = self.X[rand_idx, :], self.y[rand_idx]
             self.learn(sample_X, sample_y)
+            if (epoch % 50) == 0:
+                self.verbose(self.X, self.y, epoch, 'train')
+                self.verbose(self.X_val, self.y_val, epoch, 'val')
+
+    def verbose(self, X, y, epoch, prompt):
+        predictions = np.array(lvq.classify(X))
+        print(epoch, prompt, 'acc:', np.sum(predictions == y) / len(predictions), metrics_classification(y, predictions))
 
     def init_weights(self, df, target):
         samples = df.groupby(target).sample(1)
@@ -50,23 +59,18 @@ class LVQ:
 
 
 if __name__ == '__main__':
-    wine_train = pd.read_csv('Lab1/data/preprocessed/wine/train_wine.csv')
-    wine_val = pd.read_csv('Lab1/data/preprocessed/wine/test_wine.csv')
+    wine_train = pd.read_csv('data/preprocessed/wine/train_wine.csv')
+    wine_val = pd.read_csv('data/preprocessed/wine/test_wine.csv')
     # Classes should start from 0
     wine_train['class'] = wine_train['class'] - 1
     wine_val['class'] = wine_val['class'] - 1
 
-    lvq = LVQ(wine_train, 'class', euclidean, 0.01)
-    lvq.train(1000)
-
-    # Помер від кринжу від цього коду
-    X_train = wine_train.drop('class', axis=1).to_numpy()
-    y_train = wine_train['class'].to_numpy()
-    predictions_train = np.array(lvq.classify(X_train))
-    print('train:', np.sum(predictions_train == y_train) / len(predictions_train))
-
     X_val = wine_val.drop('class', axis=1).to_numpy()
     y_val = wine_val['class'].to_numpy()
 
-    predictions = np.array(lvq.classify(X_val))
-    print('val:', np.sum(predictions == y_val) / len(predictions))
+    lvq = LVQ(wine_train, X_val, y_val,  'class', euclidean, 0.01)
+    lvq.train(1001)
+
+
+
+

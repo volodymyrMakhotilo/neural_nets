@@ -19,7 +19,8 @@ def metrics_binary(arr_test, arr_pred):
     return res
 
 def metrics_classification(arr_test, arr_pred):
-    return classification_report(arr_test, arr_pred, digits=4, output_dict=True)
+    report = classification_report(arr_test, arr_pred, digits=4, output_dict=True)
+    return report['macro avg']
 
 
 def accuracy_binary(y_true, y_pred):
